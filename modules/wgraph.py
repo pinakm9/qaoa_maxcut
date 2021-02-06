@@ -28,8 +28,7 @@ def gen_random_wgraph(num_nodes, edge_creation_prob, unweighted=False, max_weigh
         unweighted: a boolean flag to decide if all the edges should have weight 1, default=False
         max_weight: maximum possible weight of an edge, default=10.0
 
-    Returns:
-        the generated random weighted graph        
+    Returns: the generated random weighted graph        
     """
     # create graph with G(n, p) model
     g = nx.gnp_random_graph(n=num_nodes, p=edge_creation_prob)
@@ -53,17 +52,16 @@ def gen_wgraph_from_edges(edges, unweighted=False, max_weight=10.0):
         unweighted: a boolean flag to decide if all the edges should have weight 1, default=False
         max_weight: maximum possible weight of an edge, default=10.0
 
-    Returns:
-        the generated random weighted graph        
+    Returns: the generated weighted graph        
     """
     g = nx.Graph()
     if not unweighted:
         # assign weights randomly to the given edges
-        for z in set_edges:
+        for z in edges:
             g.add_edge(str(z.start_node), str(z.end_node), weight=round(random.uniform(0.0, max_weight), 1)) # round for making prettier graph plots
     else:
         # assign weight 1 to the given edges
-        for z in set_edges:
+        for z in edges:
             g.add_edge(str(z.start_node), str(z.end_node), weight=1.0)
     return g
 
@@ -81,13 +79,3 @@ def plot_wgraph(wgraph):
     labels = nx.get_edge_attributes(wgraph, 'weight')
     nx.draw_networkx_edge_labels(wgraph, pos, edge_labels=labels)
     plt.show()
-
-
-# test: create and display a random weighted graph
-"""
-g = gen_random_wgraph(10, 0.5)
-plot_wgraph(g)
-set_edges = [Edge(0, 1), Edge(1, 2), Edge(2, 3), Edge(3, 0), Edge(2, 0), Edge(1, 3), Edge(0, 4), Edge(1, 4), Edge(2, 4), Edge(3, 4), Edge(4, 5), Edge(5, 0), Edge(2, 6), Edge(6, 3)]
-g = gen_wgraph_from_edges(set_edges)
-plot_wgraph(g)
-#"""
