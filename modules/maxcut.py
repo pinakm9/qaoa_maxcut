@@ -1,4 +1,4 @@
-import cirq
+import qiskit as qi
 import numpy as np
 import math
 from matplotlib import pyplot as plt
@@ -15,62 +15,72 @@ class MaxCut:
             wgraph: a weighted networkx Graph object
         """
         self.wgraph = wgraph
-        self.qubits = [cirq.GridQubit(0, i) for i in range(self.wgraph.number_of_node())]
+        self.num_qubits = len(wgraph)
 
-    def qubit_init(self):
-        """
-        Description: even superposition initializer for qubits
+    def classical_objective(self, bit_string):
+        pass
 
-        Yields: the initialized qubits
+    def cost_operator_unit(self, gamma):
         """
-        for qb in self.qubits:
-            yield cirq.H.on(qb)
-
-    def cost_unitary(self, gamma):
-        """
-        Description: defines the cost Hamiltonian
+        Description: defines the cost operator e^(-i * gamma * H_C) where H_C is the cost Hamiltonian
 
         Args:
-            gamma: gamma parameter in QAOA
+            gamma: gamma (scalar) parameter in QAOA
 
-        Yields: tensor product of two Z gates raised by an exponent -gamma/pi
+        Returns: e^(-i * gamma * H_c) as a quantum circuit
         """
+        circuit = qi.QuantumCircuit(self.num_qubits, self.num_qubits)
         for (u, v) in self.wgraph.edges:
-            yield cirq.ZZPowGate(exponent=-gamma/math.pi).on(qubits[u], qubits[v])
+            circuit.cx(u, v)
+            circuit.rx(2.0 * gamma, v)
+            circuit.cx(u, v)
+        return circuit
 
-    def mixer_unitary(self, alpha):
+    def mixer_operator_unit(self, beta):
         """
-        Description: defines the mixer Hamiltonian
+        Description: defines the mixer operator e^(-i * beta * H_M) where H_M is the mixer Hamiltonian
 
         Args:
-            alpha: alpha parameter in QAOA
+            beta: beta (scalar) parameter in QAOA
 
-        Yields: X gates raised by an exponent -alpha/pi
+        Returns: e^(-i * beta * H_c) as a quantum circuit
         """
-        for qb in self.qubits:
-            yield cirq.XPowGate(exponent=-alpha/math.pi).on(qb)
+        circuit = qi.QuantumCircuit(self.num_qubits, self.num_qubits)
+        for q in range(self.num_qubits):
+            circuit.rx(2.0 * beta, q)
+        return circuit
 
-    def create_circuit(self, depth, params, rep):
+    def build_circuit(self, params):
+        """
+        Description: defines the complete QAOA circuit
 
-        gamma = [params[0], params[2], params[4], params[6]]
-        alpha = [params[1], params[3], params[5], params[7]]
+        Args:
+            params: (gamma, beta) complete parameter set for QAOA
 
-        self.circuit = cirq.Circuit()
-        self.circuit.append(self.qubit_init())
-        for i in range(depth):
-            self.circuit.append(self.cost_unitary(gamma[i]))
-            self.circuit.append(self.mixer_unitary(alpha[i]))
-        self.circuit.append(cirq.measure(*qubits, key='x'))
-        print(self.circuit)
+        Returns: the complete QAOA circuit
+        """
+        circuit = qi.QuantumCircuit(self.num_qubits, self.num_qubits)
+        depth = int(len(params) / 2)
+        # initialize the qubits with the Hadamard gate
+        circuit.h(range(self.num_qubits))
+        # add cost and mixer operators
+        for i, gamma in enumerate(params[:depth]):
+            circuit += self.cost_operator_unit(gamma)
+            circuit += self.mixer_operator_unit(params[depth + i])
+        # measure the qubits
+        circuit.barrier(range(self.num_qubits))
+        circuit.measure(range(self.num_qubits), range(self.num_qubits))
+        return circuit
 
-        simulator = cirq.Simulator()
-        results = simulator.run(self.circuit, repetitions=rep)
-        results = str(results)[2:].split(", ")
-        new_res = []
-        for i in range(rep):
-            hold = []
-            for j in range(len(self.qubits)):
-                hold.append(int(results[j][i]))
-            new_res.append(hold)
+    def build_objective(self, depth):
+        """
+        Description: defines the final max-cut objective
 
-        return new_res
+        Args:
+            depth: depth of QAOA
+
+        Returns: the complete max-cut objective as a real-valued function of params = (gamma, beta)
+        """
+        def func(params):
+            circuit = self.build_circuit(params)
+        pass
