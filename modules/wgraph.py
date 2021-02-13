@@ -16,6 +16,40 @@ class Edge:
         self.start_node = start_node
         self.end_node = end_node
 
+# write a wrapper class for networkx.Graph for conveniently displaying weighted graphs
+class WeightedGraph(nx.Graph):
+    """
+    Description: a wrapper class around networkx.Graph for convenient implementation of weighted graphs
+    """
+    def __init__(self, nx_graph):
+        """
+        Args:
+            nx_graph: networkx.Graph object to wrap around
+        """
+        self.nx_graph = nx_graph
+        self.layout = nx.spring_layout(nx_graph)
+
+    def __getattr__(self, name):
+        """
+        Description: delegates standard networkx.Graph attributes conveniently
+        """
+        return getattr(self.nx_graph, name)
+    
+    def draw(self, cut=None):
+        """
+        Description: consistently draws the weighted graph
+
+        Args:
+            cut: a bit-string to decide node colors, default=None
+        """
+        if cut is None:
+            colors = ['blue' for node in self.nx_graph]
+        else:
+            colors = ['blue' if cut[int(node)] == '0' else 'red' for node in self.nx_graph]
+        nx.draw(self.nx_graph, pos=self.layout, node_color=colors)
+        labels = nx.get_edge_attributes(self.nx_graph, 'weight')
+        nx.draw_networkx_edge_labels(self.nx_graph, pos=self.layout, edge_labels=labels)
+        plt.show()
 
 # write a function for creating a random weighted graph
 def gen_random_wgraph(num_nodes, edge_creation_prob, unweighted=False, max_weight=10.0):
@@ -39,7 +73,7 @@ def gen_random_wgraph(num_nodes, edge_creation_prob, unweighted=False, max_weigh
     else:
         for (u, v) in g.edges():
             g.edges[u, v]['weight'] = 1.0
-    return g
+    return WeightedGraph(g)
 
 
 # write a function for creating a randomly weighted graph from a given set of edges
@@ -63,19 +97,6 @@ def gen_wgraph_from_edges(edges, unweighted=False, max_weight=10.0):
         # assign weight 1 to the given edges
         for z in edges:
             g.add_edge(str(z.start_node), str(z.end_node), weight=1.0)
-    return g
+    return WeightedGraph(g)
 
-
-# write a function for creating a weighted graph
-def plot_wgraph(wgraph):
-    """
-    Description: a function for displaying a weighted graph
-
-    Args:
-        wgraph: the weighted graph to be plotted
-    """
-    pos = nx.spring_layout(wgraph)
-    nx.draw(wgraph, pos)
-    labels = nx.get_edge_attributes(wgraph, 'weight')
-    nx.draw_networkx_edge_labels(wgraph, pos, edge_labels=labels)
-    plt.show()
+    

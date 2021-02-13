@@ -133,13 +133,12 @@ class MaxCut:
 
     def solve(self, depth, max_iter):
         """
-        Description: solves the max-cut problem with QAOA
+        Description: solves the max-cut problem with QAOA and stores
+                     the sorted array of cuts (as bit_strings) in the decreasing order of probability of being optimal
 
         Args:
             depth: depth of QAOA
             max_iter: maximum number of iterations for scipy optimizer
-
-        Returns: sorted array of cuts (as bit_strings) in the decreasing order of probability of being optimal
         """
         # solve for QAOA parameters
         initial_guess = np.ones(2 * depth)
@@ -154,9 +153,20 @@ class MaxCut:
         plt.bar([int(bs, 2) for bs in bit_strings], probabilities)
         plt.title('probabilities of being an optimal cut')
         plt.show()
-        # sort cuts according to probabilities in a decreasing order and return the result
-        num_sols_to_display = 5 if len(bit_strings) > 5 else len(bit_strings)
-        sols =  np.array(bit_strings)[np.argsort(probabilities)][::-1][:num_sols_to_display]
-        print("Here are the first {} candidates for optimal cut with corresponding sums of inter-cluster edge weights:".format(num_sols_to_display))
-        for sol in sols:
-            print("{}: {}".format(sol, - 0.5* self.classical_objective(sol)))
+        # sort cuts according to probabilities in a decreasing order
+        self.sols =  np.array(bit_strings)[np.argsort(probabilities)][::-1]
+        
+    def view_first_few_solutions(self, num_sols_to_display):
+        """
+        Description: displays first few solutions obtained by QAOA
+        
+        Args:
+            num_sols_to_display: number of solutions to be displayed
+        """
+        print("Here are the first {} candidates for optimal cut with corresponding sums of inter-cluster edge weights:".format(num_sols_to_display)) 
+        for i, sol in enumerate(self.sols[:num_sols_to_display]):
+            string = "Candidate #{} for optimal cut".format(i)
+            print("{}\n{}".format(string, '-' * len(string)))
+            print("Cut{}: Sum of inter-cluster edge weights".format(' ' * (self.num_qubits - 3) if self.num_qubits > 2 else 0))
+            print("{}: {}".format(sol, abs(0.5* self.classical_objective(sol))))
+            self.wgraph.draw(cut=sol)
