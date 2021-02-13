@@ -1,10 +1,8 @@
 import qiskit as qi
 import numpy as np
-import math
 from matplotlib import pyplot as plt
 import random
 from scipy.optimize import minimize 
-from qiskit.tools.visualization import plot_histogram
 
 class MaxCut:
     """
