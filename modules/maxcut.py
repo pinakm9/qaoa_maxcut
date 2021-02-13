@@ -146,10 +146,10 @@ class MaxCut:
         # map the optimal QAOA paramters to the bit-string(s) representing the solution(s) of max-cut
         optimal_params = optimization_result['x']
         circuit = self.build_circuit(optimal_params)
-        simulation_result = self.run_circuit(circuit, 1000)
+        simulation_result = self.run_circuit(circuit, 2000)
         # plot histogram of simulation results
         bit_strings = list(simulation_result.keys())
-        probabilities = [simulation_result[bs] / 1000.0 for bs in bit_strings]
+        probabilities = [simulation_result[bs] / 2000.0 for bs in bit_strings]
         plt.bar([int(bs, 2) for bs in bit_strings], probabilities)
         plt.title('probabilities of being an optimal cut')
         plt.show()
