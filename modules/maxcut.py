@@ -39,11 +39,11 @@ class MaxCut:
         Arg: 
             bit_string: a bit-string defining the cut
         
-        Returns: - 2 * sum of inter-cluster edge weights
+        Returns: - sum of inter-cluster edge weights
         """
         cost = 0.0
         for (u, v) in self.wgraph.edges:
-            cost += self.wgraph.edges[u, v]['weight'] * ((-1)**(int(bit_string[u]) + int(bit_string[v])) - 1)
+            cost -= self.wgraph.edges[u, v]['weight'] if bit_string[u] != bit_string[v] else 0.0
         return cost
 
     def cost_operator(self, gamma):
@@ -58,7 +58,7 @@ class MaxCut:
         circuit = qi.QuantumCircuit(self.num_qubits, self.num_qubits)
         for (u, v) in self.wgraph.edges:
             circuit.cx(u, v)
-            circuit.rx(2.0 * gamma, v)
+            circuit.rz(2.0 * gamma, v)
             circuit.cx(u, v)
         return circuit
 
@@ -141,7 +141,7 @@ class MaxCut:
             max_iter: maximum number of iterations for scipy optimizer
         """
         # solve for QAOA parameters
-        initial_guess = np.ones(2 * depth)
+        initial_guess = [random.randint(-314, 314)/100.0 for i in range(2 * depth)]
         optimization_result = minimize(self.objective, initial_guess, method='COBYLA', options={'maxiter': max_iter})
         # map the optimal QAOA paramters to the bit-string(s) representing the solution(s) of max-cut
         optimal_params = optimization_result['x']
@@ -165,8 +165,8 @@ class MaxCut:
         """
         print("Here are the first {} candidates for optimal cut with corresponding sums of inter-cluster edge weights:".format(num_sols_to_display)) 
         for i, sol in enumerate(self.sols[:num_sols_to_display]):
-            string = "Candidate #{} for optimal cut".format(i)
+            string = "Candidate #{} for optimal cut".format(i + 1)
             print("{}\n{}".format(string, '-' * len(string)))
             print("Cut{}: Sum of inter-cluster edge weights".format(' ' * (self.num_qubits - 3) if self.num_qubits > 2 else 0))
-            print("{}: {}".format(sol, abs(0.5* self.classical_objective(sol))))
+            print("{}: {}".format(sol, abs(self.classical_objective(sol))))
             self.wgraph.draw(cut=sol)
